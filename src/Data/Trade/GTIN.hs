@@ -9,13 +9,13 @@ module Data.Trade.GTIN (GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SC
 import Data.Binary (Binary (get, put))
 import Data.Data (Data)
 import Data.Hashable (Hashable)
-import Data.List(intercalate, unfoldr)
+import Data.List (intercalate, unfoldr)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
 import GHC.TypeNats (KnownNat, natVal)
 import Numeric.Natural (Natural)
-import Text.Printf(printf)
+import Text.Printf (printf)
 
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 
@@ -24,13 +24,16 @@ _decw = natVal
 
 _tocheck :: Integral i => i -> i -> i
 _tocheck n d = (d + n1 + 3 * n2) `mod` 10
-  where ~(n1, n2) = n `quotRem` 10
+  where
+    ~(n1, n2) = n `quotRem` 10
 
 _determineChecksum :: Word64 -> Word64
 _determineChecksum w = (10 - go (w `div` 10) 0) `mod` 10
-  where go 0 = id
-        go n = go q . _tocheck r
-          where ~(q, r) = n `quotRem` 100
+  where
+    go 0 = id
+    go n = go q . _tocheck r
+      where
+        ~(q, r) = n `quotRem` 100
 
 fixChecksum :: GTIN n -> GTIN n
 fixChecksum (GTIN w') = GTIN (w' - w' `mod` 10 + _determineChecksum w')
@@ -40,17 +43,20 @@ equivGTIN (GTIN w1) (GTIN w2) = w1 == w2
 
 instance KnownNat n => Show (GTIN n) where
   showsPrec d g@(GTIN v) = showParen (d > 0) (("GTIN " ++ printf ("%0" ++ sn ++ "d") v ++ " :: GTIN " ++ sn) ++)
-    where sn = show (_decw g)
+    where
+      sn = show (_decw g)
 
 gtinToString :: KnownNat n => GTIN n -> String
 gtinToString g@(GTIN w) = intercalate " " (map p (reverse (unfoldr f (n, w))))
-  where n = _decw g
-        p (n0, v) = printf ("%0" ++ show n0 ++ "d") v
-        f (n0, v)
-          | n0 <= 0 = Nothing
-          | otherwise = Just ((min 4 n0, r), (n0-dd, q))
-          where ~(q, r) = v `quotRem` 10000
-                dd = min 4 n0
+  where
+    n = _decw g
+    p (n0, v) = printf ("%0" ++ show n0 ++ "d") v
+    f (n0, v)
+      | n0 <= 0 = Nothing
+      | otherwise = Just ((min 4 n0, r), (n0 - dd, q))
+      where
+        ~(q, r) = v `quotRem` 10000
+        dd = min 4 n0
 
 instance Hashable (GTIN n)
 
