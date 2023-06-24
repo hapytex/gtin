@@ -14,7 +14,7 @@ import Data.List (intercalate, unfoldr)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
-#if MIN_VERSION_base(4,14,0)
+#if MIN_VERSION_base(4,14,3)
 import Numeric.Natural (Natural)
 #else
 import GHC.Types(Nat)
@@ -22,14 +22,18 @@ import GHC.Types(Nat)
 import GHC.TypeNats (KnownNat, natVal)
 import Text.Printf (printf)
 
-#if !MIN_VERSION_base(4,14,0)
+#if !MIN_VERSION_base(4,14,3)
 type Natural = Nat
 #endif
 
+#if MIN_VERSION_base(4,14,3)
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
+#else
+newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
+#endif
 
-_decw :: KnownNat n => GTIN n -> Natural
-_decw = natVal
+_decw :: KnownNat n => GTIN n -> Int
+_decw = fromIntegral . natVal
 
 _tocheck :: Integral i => i -> i -> i
 _tocheck n d = (d + n1 + 3 * n2) `mod` 10
