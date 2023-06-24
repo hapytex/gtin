@@ -4,7 +4,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+#if !MIN_VERSION_base(4,16,4)
 {-# LANGUAGE TypeFamilies #-}
+#endif
 {-# OPTIONS_GHC -Wall -fno-warn-redundant-constraints -Werror #-}
 
 -- |
@@ -70,7 +72,9 @@ newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Ty
 #endif
 
 -- | Constructing a 'GTIN" with bound and checksum checks.
-gtin :: forall i n. ((TN.<=) n 19, Integral i, KnownNat n) =>
+gtin ::
+  forall i n.
+  ((TN.<=) n 19, Integral i, KnownNat n) =>
   -- | An 'Integral' value for which we want to construct a 'GTIN' number.
   i ->
   -- | A 'GTIN' number wrapped in a 'Just' if the given value is within bounds and the checksum matches; 'Nothing' otherwise.
