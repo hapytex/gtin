@@ -77,9 +77,15 @@ instance Binary (GTIN n) where
   get = GTIN <$> get
   put (GTIN w) = put w
 
+#if MIN_VERSION_base(4,14,3)
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
-  minBound = GTIN 0
-  maxBound = GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1)
+  minBound = fixChecksum (GTIN 0)
+  maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
+#else
+instance KnownNat n => Bounded (GTIN (n :: Nat)) where
+  minBound = fixChecksum (GTIN 0)
+  maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
+#endif
 
 type GTIN14 = GTIN 14
 
