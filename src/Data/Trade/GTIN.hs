@@ -14,13 +14,13 @@ import Data.List (intercalate, unfoldr)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
-#if !MIN_VERSION_base(4,13,0)
+#if MIN_VERSION_base(4,14,0)
+import Numeric.Natural (Natural)
+#else
 import GHC.Types(Nat)
 type Natural = Nat
-#else
-import GHC.TypeNats (KnownNat, natVal)
 #endif
-import Numeric.Natural (Natural)
+import GHC.TypeNats (KnownNat, natVal)
 import Text.Printf (printf)
 
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
