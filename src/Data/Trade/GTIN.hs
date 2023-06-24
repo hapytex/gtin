@@ -69,7 +69,12 @@ newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read
 newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #endif
 
-gtin :: forall i n. ((TN.<=) n 19, Integral i, KnownNat n) => i -> Maybe (GTIN n)
+-- | Constructing a 'GTIN" with bound and checksum checks.
+gtin :: forall i n. ((TN.<=) n 19, Integral i, KnownNat n) =>
+  -- | An 'Integral' value for which we want to construct a 'GTIN' number.
+  i ->
+  -- | A 'GTIN' number wrapped in a 'Just' if the given value is within bounds and the checksum matches; 'Nothing' otherwise.
+  Maybe (GTIN n)
 gtin v''
   | 0 <= v' && v' <= m && checkChecksum v = Just v
   | otherwise = Nothing
