@@ -72,7 +72,7 @@ instance Binary (GTIN n) where
 
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
   minBound = GTIN 0
-  maxBound = GTIN (10 ^ _decw (undefined :: GTIN n) - 1)
+  maxBound = GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1)
 
 type GTIN14 = GTIN 14
 
