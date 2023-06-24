@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wall -fno-warn-redundant-constraints -Werror #-}
 
 -- |
 -- Module      : Data.Trade.GTIN
@@ -15,7 +16,7 @@
 -- The module exposes a 'GTIN' data type that contains the number of digits as well.
 module Data.Trade.GTIN
   ( -- * GTIN and its aliasses.
-    GTIN (GTIN),
+    GTIN (GTIN), gtin,
     GTIN14,
     GTIN13,
     GTIN12,
