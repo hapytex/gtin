@@ -18,10 +18,13 @@ import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
 #else
 import GHC.Types(Nat)
-type Natural = Nat
 #endif
 import GHC.TypeNats (KnownNat, natVal)
 import Text.Printf (printf)
+
+#if !MIN_VERSION_base(4,14,0)
+type Natural = Nat
+#endif
 
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 
