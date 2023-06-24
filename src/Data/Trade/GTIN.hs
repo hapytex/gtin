@@ -163,9 +163,19 @@ instance Binary (GTIN n) where
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
 #else
 instance KnownNat n => Bounded (GTIN (n :: Nat)) where
+#endif
   minBound = fixChecksum (GTIN 0)
   maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
+
+#if MIN_VERSION_base(4,16,4)
+instance KnownNat n => Enum (GTIN (n :: Natural)) where
+#else
+instance KnownNat n => Enum (GTIN (n :: Nat)) where
 #endif
+  succ (GTIN w) = fixChecksum (GTIN (w + 10))
+  pred (GTIN w) = fixChecksum (GTIN (w - 10))
+  toEnum = GTIN . toEnum
+  fromEnum (GTIN w) = fromEnum w
 
 -- | A type alias for a 'GTIN' number with fourteen numbers, with as range @00 0000 0000 0000@–@99 9999 9999 9997@.
 type GTIN14 = GTIN 14
