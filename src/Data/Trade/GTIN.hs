@@ -54,6 +54,7 @@ import Numeric.Natural (Natural)
 import GHC.Types(Nat)
 #endif
 import GHC.TypeNats (KnownNat, natVal)
+import qualified GHC.TypeNats as TN
 import Text.Printf (printf)
 
 #if MIN_VERSION_base(4,16,4)
@@ -64,8 +65,19 @@ newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read
 newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #endif
 
+gtin :: forall i n . ((TN.<=) n 19, Integral i, KnownNat n) => i -> Maybe (GTIN n)
+gtin v''
+  | 0 <= v' && v' <= m && checkChecksum v = Just v
+  | otherwise = Nothing
+  where v' = fromIntegral v'' :: Integer
+        v = GTIN (fromIntegral v')
+        m = _maxBound (error "should not be evaluated" :: GTIN n)
+
 _decw :: KnownNat n => GTIN n -> Int
 _decw = fromIntegral . natVal
+
+_maxBound :: (Integral i, KnownNat n) => GTIN n -> i
+_maxBound = pred . (10 ^) . _decw
 
 _tocheck :: Integral i => i -> i -> i
 _tocheck n d = (d + n1 + 3 * n2) `mod` 10
