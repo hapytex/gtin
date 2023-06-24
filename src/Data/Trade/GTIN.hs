@@ -13,16 +13,33 @@
 -- Portability : POSIX
 --
 -- The module exposes a 'GTIN' data type that contains the number of digits as well.
-module Data.Trade.GTIN (
-    -- * GTIN and its aliasses.
-    GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SCC14, EAN, EANUCC13, ISBN, ISBN13, EANUCC8, GSIN, SSCC,
+module Data.Trade.GTIN
+  ( -- * GTIN and its aliasses.
+    GTIN (GTIN),
+    GTIN14,
+    GTIN13,
+    GTIN12,
+    GTIN8,
+    EANUCC14,
+    SCC14,
+    EAN,
+    EANUCC13,
+    ISBN,
+    ISBN13,
+    EANUCC8,
+    GSIN,
+    SSCC,
+
     -- * Check if two GTINs are equivalent, even if the "width" of the GTINs are equivalent.
     equivGTIN,
+
     -- * Fix the checksum of a GTIN number
     fixChecksum,
+
     -- * Convert the GTINs to a readable format.
-    gtinToString
-  ) where
+    gtinToString,
+  )
+where
 
 import Data.Binary (Binary (get, put))
 import Data.Data (Data)
@@ -40,8 +57,10 @@ import GHC.TypeNats (KnownNat, natVal)
 import Text.Printf (printf)
 
 #if MIN_VERSION_base(4,16,4)
+-- | A datatype for /Global Trade Item Numbers 'GTIN'/ with arbitrary "width" (up to nineteen digits technically possible).
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #else
+-- | A datatype for /Global Trade Item Numbers 'GTIN'/ with arbitrary "width" (up to nineteen digits technically possible).
 newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #endif
 
@@ -88,7 +107,8 @@ instance KnownNat n => Show (GTIN n) where
       sn = show (_decw g)
 
 -- | Convert the given 'GTIN' number to convert to a 'String' that groups numbers into groups of four.
-gtinToString :: KnownNat n =>
+gtinToString ::
+  KnownNat n =>
   -- | The given 'GTIN' number to convert to a readable 'String'.
   GTIN n ->
   -- | A 'String' that contains the GTIN number, in chucks of four digits.
