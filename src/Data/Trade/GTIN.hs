@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -13,7 +14,12 @@ import Data.List (intercalate, unfoldr)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
+#if !MIN_VERSION_base(4,13,0)
+import GHC.Types(Nat)
+type Natural = Nat
+#else
 import GHC.TypeNats (KnownNat, natVal)
+#endif
 import Numeric.Natural (Natural)
 import Text.Printf (printf)
 
