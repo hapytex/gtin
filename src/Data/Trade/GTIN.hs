@@ -5,7 +5,24 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Trade.GTIN (GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SCC14, EAN, EANUCC13, ISBN, ISBN13, EANUCC8, GSIN, SSCC, equivGTIN, fixChecksum, gtinToString) where
+-- |
+-- Module      : Data.Trade.GTIN
+-- Description : A module to parse, render and manipulate GTIN codes used for trade and EAN barcodes.
+-- Maintainer  : hapytexeu+gh@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- The module exposes a 'GTIN' data type that contains the number of digits as well.
+module Data.Trade.GTIN (
+    -- * GTIN and its aliasses.
+    GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SCC14, EAN, EANUCC13, ISBN, ISBN13, EANUCC8, GSIN, SSCC,
+    -- * Check if two GTINs are equivalent, even if the "width" of the GTINs are equivalent.
+    equivGTIN,
+    -- * Fix the checksum of a GTIN number
+    fixChecksum,
+    -- * Convert the GTINs to a readable format.
+    gtinToString
+  ) where
 
 import Data.Binary (Binary (get, put))
 import Data.Data (Data)
@@ -44,13 +61,25 @@ _determineChecksum w = (10 - go (w `div` 10) 0) `mod` 10
       where
         ~(q, r) = n `quotRem` 100
 
-fixChecksum :: GTIN n -> GTIN n
+-- | Fix the checksum of a given 'GTIN' object. If the checksum is valid, then it will return the same GTIN, this operation is thus /idempotent/.
+fixChecksum ::
+  -- | The given 'GTIN' number where we fix the checksum from.
+  GTIN n ->
+  -- | A 'GTIN' object that is the variant of the given 'GTIN' number, with a valid checksum.
+  GTIN n
 fixChecksum (GTIN w') = GTIN (w' - w' `mod` 10 + _determineChecksum w')
 
 -- upscaleGTIN :: m TN.<= n => GTIN m -> GTIN n
 -- upscaleGTIN (GTIN w) = GTIN w
 
-equivGTIN :: GTIN m -> GTIN n -> Bool
+-- | Check if two 'GTIN' numbers, possibly with a different "width" are equivalent.
+equivGTIN ::
+  -- | The first 'GTIN' to check.
+  GTIN n ->
+  -- | The second 'GTIN' to check.
+  GTIN n ->
+  -- | 'True' if the given 'GTIN' values are equivalent; 'False' otherwise.
+  Bool
 equivGTIN (GTIN w1) (GTIN w2) = w1 == w2
 
 instance KnownNat n => Show (GTIN n) where
@@ -58,7 +87,12 @@ instance KnownNat n => Show (GTIN n) where
     where
       sn = show (_decw g)
 
-gtinToString :: KnownNat n => GTIN n -> String
+-- | Convert the given 'GTIN' number to convert to a 'String' that groups numbers into groups of four.
+gtinToString :: KnownNat n =>
+  -- | The given 'GTIN' number to convert to a readable 'String'.
+  GTIN n ->
+  -- | A 'String' that contains the GTIN number, in chucks of four digits.
+  String
 gtinToString g@(GTIN w) = unwords (map p (reverse (unfoldr f (n, w))))
   where
     n = _decw g
@@ -86,28 +120,41 @@ instance KnownNat n => Bounded (GTIN (n :: Nat)) where
   maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
 #endif
 
+-- | A type alias for a 'GTIN' number with fourteen numbers, with as range @00 0000 0000 0000@–@99 9999 9999 9997@.
 type GTIN14 = GTIN 14
 
+-- | A type alias for a 'GTIN' number with thirteen numbers, with as range @0 0000 0000 0000@–@9 9999 9999 9994@.
 type GTIN13 = GTIN 13
 
+-- | A type alias for a 'GTIN' number with twelve numbers, with as range @0000 0000 0000@–@9999 9999 9993@.
 type GTIN12 = GTIN 12
 
+-- | A type alias for a 'GTIN' number with eight numbers, with as range @0000 0000@–@9999 9995@.
 type GTIN8 = GTIN 8
 
+-- | A type alias for a 'GTIN' number with seventeen numbers, with as range @0 0000 0000 0000 0000@–@9 9999 9999 9999 9992@.
 type GSIN = GTIN 17
 
+-- | A type alias for a 'GTIN' number with eighteen numbers, with as range @00 0000 0000 0000 0000@–@99 9999 9999 9999 9995@.
 type SSCC = GTIN 18
 
+-- | A type alias for a 'GTIN' number with fourteen numbers, with as range @00 0000 0000 0000@–@99 9999 9999 9997@.
 type EANUCC14 = GTIN14
 
+-- | A type alias for a 'GTIN' number with fourteen numbers, with as range @00 0000 0000 0000@–@99 9999 9999 9997@.
 type SCC14 = GTIN14
 
+-- | A type alias for a 'GTIN' number with thirteen numbers, with as range @0 0000 0000 0000@–@9 9999 9999 9994@.
 type EAN = GTIN13
 
+-- | A type alias for a 'GTIN' number with thirteen numbers, with as range @0 0000 0000 0000@–@9 9999 9999 9994@.
 type EANUCC13 = GTIN13
 
+-- | A type alias for a 'GTIN' with thirtheen numbers which is also an ISBN number, with as range @0 0000 0000 0000@–@9 9999 9999 9994@.
 type ISBN = GTIN13
 
+-- | A type alias for a 'GTIN' with thirtheen numbers which is also an ISBN number, with as range @0 0000 0000 0000@–@9 9999 9999 9994@.
 type ISBN13 = GTIN13
 
+-- | A type alias for a 'GTIN' number with eight numbers, with as range @0000 0000@–@9999 9995@.
 type EANUCC8 = GTIN8
