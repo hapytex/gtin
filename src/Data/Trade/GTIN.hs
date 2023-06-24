@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Trade.GTIN (GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SCC14, EAN, EANUCC13, ISBN, ISBN13, EANUCC8, GSIN, SSCC, equivGTIN, fixChecksum, gtinToString) where
 
@@ -14,7 +13,7 @@ import Data.List (intercalate, unfoldr)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
-#if MIN_VERSION_base(4,14,3)
+#if MIN_VERSION_base(4,15,1)
 import Numeric.Natural (Natural)
 #else
 import GHC.Types(Nat)
@@ -22,7 +21,7 @@ import GHC.Types(Nat)
 import GHC.TypeNats (KnownNat, natVal)
 import Text.Printf (printf)
 
-#if MIN_VERSION_base(4,14,3)
+#if MIN_VERSION_base(4,15,1)
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #else
 newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
@@ -46,6 +45,9 @@ _determineChecksum w = (10 - go (w `div` 10) 0) `mod` 10
 
 fixChecksum :: GTIN n -> GTIN n
 fixChecksum (GTIN w') = GTIN (w' - w' `mod` 10 + _determineChecksum w')
+
+-- upscaleGTIN :: m TN.<= n => GTIN m -> GTIN n
+-- upscaleGTIN (GTIN w) = GTIN w
 
 equivGTIN :: GTIN m -> GTIN n -> Bool
 equivGTIN (GTIN w1) (GTIN w2) = w1 == w2
@@ -73,7 +75,7 @@ instance Binary (GTIN n) where
   get = GTIN <$> get
   put (GTIN w) = put w
 
-#if MIN_VERSION_base(4,14,3)
+#if MIN_VERSION_base(4,15,1)
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
   minBound = fixChecksum (GTIN 0)
   maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
