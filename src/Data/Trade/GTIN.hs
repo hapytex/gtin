@@ -84,6 +84,15 @@ _decw = fromIntegral . natVal
 _maxBound :: (Integral i, KnownNat n) => GTIN n -> i
 _maxBound = pred . (10 ^) . _decw
 
+_checkgtin :: Word64 -> GTIN n
+_checkgtin = fixChecksum . GTIN
+
+_checkgtin' :: [Word64] -> [GTIN n]
+_checkgtin' = map _checkgtin
+
+_wipe :: Word64 -> Word64
+_wipe w = w - w `mod` 10
+
 _tocheck :: Integral i => i -> i -> i
 _tocheck n d = (d + n1 + 3 * n2) `mod` 10
   where
@@ -176,6 +185,12 @@ instance KnownNat n => Enum (GTIN (n :: Nat)) where
   pred (GTIN w) = fixChecksum (GTIN (w - 10))
   toEnum = GTIN . toEnum
   fromEnum (GTIN w) = fromEnum w
+  enumFrom g@(GTIN n) = _checkgtin' [n, n + 10 .. _maxBound g]
+  enumFromThen g@(GTIN m) (GTIN n)
+    | m <= n = _checkgtin' [_wipe m, _wipe n .. _maxBound g]
+    | otherwise = _checkgtin' [_wipe m, _wipe n .. 0]
+  enumFromThenTo (GTIN m) (GTIN n) (GTIN o) = _checkgtin' [_wipe m, _wipe n .. _wipe o]
+  enumFromTo (GTIN m) (GTIN n) = map (fixChecksum . GTIN) [m, m + 10 .. n]
 
 -- | A type alias for a 'GTIN' number with fourteen numbers, with as range @00 0000 0000 0000@–@99 9999 9999 9997@.
 type GTIN14 = GTIN 14
