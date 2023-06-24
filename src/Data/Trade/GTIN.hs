@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-#if !MIN_VERSION_base(4,16,4)
+#if !MIN_VERSION_base(4,17,1)
 {-# LANGUAGE TypeFamilies #-}
 #endif
 {-# OPTIONS_GHC -Wall -fno-warn-redundant-constraints -Werror #-}
