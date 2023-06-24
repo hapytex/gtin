@@ -9,7 +9,7 @@ module Data.Trade.GTIN (GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SC
 import Data.Binary (Binary (get, put))
 import Data.Data (Data)
 import Data.Hashable (Hashable)
-import Data.List (intercalate, unfoldr)
+import Data.List (unfoldr)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
@@ -58,7 +58,7 @@ instance KnownNat n => Show (GTIN n) where
       sn = show (_decw g)
 
 gtinToString :: KnownNat n => GTIN n -> String
-gtinToString g@(GTIN w) = intercalate " " (map p (reverse (unfoldr f (n, w))))
+gtinToString g@(GTIN w) = unwords (map p (reverse (unfoldr f (n, w))))
   where
     n = _decw g
     p (n0, v) = printf ("%0" ++ show n0 ++ "d") v
