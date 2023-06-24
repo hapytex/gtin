@@ -161,8 +161,6 @@ instance Binary (GTIN n) where
 
 #if MIN_VERSION_base(4,16,4)
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
-  minBound = fixChecksum (GTIN 0)
-  maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
 #else
 instance KnownNat n => Bounded (GTIN (n :: Nat)) where
   minBound = fixChecksum (GTIN 0)
