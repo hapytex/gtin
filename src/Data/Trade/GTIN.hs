@@ -34,7 +34,7 @@ module Data.Trade.GTIN
     equivGTIN,
 
     -- * Fix the checksum of a GTIN number
-    fixChecksum,
+    fixChecksum, checkChecksum,
 
     -- * Convert the GTINs to a readable format.
     gtinToString,
@@ -73,7 +73,7 @@ _tocheck n d = (d + n1 + 3 * n2) `mod` 10
     ~(n1, n2) = n `quotRem` 10
 
 _determineChecksum :: Word64 -> Word64
-_determineChecksum w = (10 - go (w `div` 10) 0) `mod` 10
+_determineChecksum w = (10 - go w 0) `mod` 10
   where
     go 0 = id
     go n = go q . _tocheck r
@@ -86,7 +86,17 @@ fixChecksum ::
   GTIN n ->
   -- | A 'GTIN' object that is the variant of the given 'GTIN' number, with a valid checksum.
   GTIN n
-fixChecksum (GTIN w') = GTIN (w' - w' `mod` 10 + _determineChecksum w')
+fixChecksum (GTIN w') = GTIN (w' - w1 + _determineChecksum w0)
+  where ~(w0, w1) = w' `quotRem` 10
+
+-- | Check if the given checksum matches.
+checkChecksum ::
+  -- | The given 'GTIN' number for which we check the checksum.
+  GTIN n ->
+  -- | 'True' if the given checksum matches; 'False' otherwise.
+  Bool
+checkChecksum (GTIN w') = _determineChecksum w0 == w1
+  where ~(w0, w1) = w' `quotRem` 10
 
 -- upscaleGTIN :: m TN.<= n => GTIN m -> GTIN n
 -- upscaleGTIN (GTIN w) = GTIN w
@@ -94,7 +104,7 @@ fixChecksum (GTIN w') = GTIN (w' - w' `mod` 10 + _determineChecksum w')
 -- | Check if two 'GTIN' numbers, possibly with a different "width" are equivalent.
 equivGTIN ::
   -- | The first 'GTIN' to check.
-  GTIN n ->
+  GTIN m ->
   -- | The second 'GTIN' to check.
   GTIN n ->
   -- | 'True' if the given 'GTIN' values are equivalent; 'False' otherwise.
