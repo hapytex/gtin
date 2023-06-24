@@ -4,8 +4,9 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Trade.GTIN (GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SCC14, EAN, EANUCC13, ISBN, ISBN13, EANUCC8) where
+module Data.Trade.GTIN (GTIN (GTIN), GTIN14, GTIN13, GTIN12, GTIN8, EANUCC14, SCC14, EAN, EANUCC13, ISBN, ISBN13, EANUCC8, GSIN, SSCC) where
 
+import Data.Binary (Binary (get, put))
 import Data.Data (Data)
 import Data.Hashable (Hashable)
 import Data.Typeable (Typeable)
@@ -29,6 +30,10 @@ instance KnownNat n => Show (GTIN n) where
     where sn = show (_decw g)
 
 instance Hashable (GTIN n)
+
+instance Binary (GTIN n) where
+  get = GTIN <$> get
+  put (GTIN w) = put w
 
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
   minBound = GTIN 0
