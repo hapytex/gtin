@@ -22,10 +22,6 @@ import GHC.Types(Nat)
 import GHC.TypeNats (KnownNat, natVal)
 import Text.Printf (printf)
 
-#if !MIN_VERSION_base(4,14,3)
-type Natural = Nat
-#endif
-
 #if MIN_VERSION_base(4,14,3)
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #else
