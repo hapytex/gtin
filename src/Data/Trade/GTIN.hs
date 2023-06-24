@@ -17,7 +17,8 @@
 -- The module exposes a 'GTIN' data type that contains the number of digits as well.
 module Data.Trade.GTIN
   ( -- * GTIN and its aliasses.
-    GTIN (GTIN), gtin,
+    GTIN (GTIN),
+    gtin,
     GTIN14,
     GTIN13,
     GTIN12,
@@ -36,7 +37,8 @@ module Data.Trade.GTIN
     equivGTIN,
 
     -- * Fix the checksum of a GTIN number
-    fixChecksum, checkChecksum,
+    fixChecksum,
+    checkChecksum,
 
     -- * Convert the GTINs to a readable format.
     gtinToString,
@@ -67,13 +69,14 @@ newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read
 newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #endif
 
-gtin :: forall i n . ((TN.<=) n 19, Integral i, KnownNat n) => i -> Maybe (GTIN n)
+gtin :: forall i n. ((TN.<=) n 19, Integral i, KnownNat n) => i -> Maybe (GTIN n)
 gtin v''
   | 0 <= v' && v' <= m && checkChecksum v = Just v
   | otherwise = Nothing
-  where v' = fromIntegral v'' :: Integer
-        v = GTIN (fromIntegral v')
-        m = _maxBound (error "should not be evaluated" :: GTIN n)
+  where
+    v' = fromIntegral v'' :: Integer
+    v = GTIN (fromIntegral v')
+    m = _maxBound (error "should not be evaluated" :: GTIN n)
 
 _decw :: KnownNat n => GTIN n -> Int
 _decw = fromIntegral . natVal
@@ -101,7 +104,8 @@ fixChecksum ::
   -- | A 'GTIN' object that is the variant of the given 'GTIN' number, with a valid checksum.
   GTIN n
 fixChecksum (GTIN w') = GTIN (w' - w1 + _determineChecksum w0)
-  where ~(w0, w1) = w' `quotRem` 10
+  where
+    ~(w0, w1) = w' `quotRem` 10
 
 -- | Check if the given checksum matches.
 checkChecksum ::
@@ -110,7 +114,8 @@ checkChecksum ::
   -- | 'True' if the given checksum matches; 'False' otherwise.
   Bool
 checkChecksum (GTIN w') = _determineChecksum w0 == w1
-  where ~(w0, w1) = w' `quotRem` 10
+  where
+    ~(w0, w1) = w' `quotRem` 10
 
 -- upscaleGTIN :: m TN.<= n => GTIN m -> GTIN n
 -- upscaleGTIN (GTIN w) = GTIN w
