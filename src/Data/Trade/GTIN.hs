@@ -11,8 +11,8 @@ import Data.Hashable (Hashable)
 import Data.Typeable (Typeable)
 import Data.Word (Word64)
 import GHC.Generics (Generic)
-import Numeric.Natural (Natural)
 import GHC.TypeNats (KnownNat, natVal)
+import Numeric.Natural (Natural)
 
 newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Show, Typeable)
 
