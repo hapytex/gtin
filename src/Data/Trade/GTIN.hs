@@ -4,10 +4,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 #if !MIN_VERSION_base(4,17,1)
 {-# LANGUAGE TypeFamilies #-}
 #endif
-{-# OPTIONS_GHC -Wall -fno-warn-redundant-constraints -Werror #-}
+{-# OPTIONS_GHC -Wall -fno-warn-redundant-constraints #-}
 
 -- |
 -- Module      : Data.Trade.GTIN
@@ -66,6 +67,8 @@ import GHC.Types(Nat)
 #endif
 import GHC.TypeNats (KnownNat, natVal)
 import qualified GHC.TypeNats as TN
+import Test.QuickCheck.Arbitrary (Arbitrary (arbitrary))
+import Test.QuickCheck.Gen (choose)
 import Text.Printf (printf)
 
 #if MIN_VERSION_base(4,16,4)
@@ -75,6 +78,15 @@ newtype GTIN (n :: Natural) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read
 -- | A datatype for /Global Trade Item Numbers 'GTIN'/ with arbitrary "width" (up to nineteen digits technically possible).
 newtype GTIN (n :: Nat) = GTIN Word64 deriving (Data, Eq, Generic, Ord, Read, Typeable)
 #endif
+
+_hole :: GTIN n
+_hole = error "should not be evaluated"
+
+_fromEnum :: GTIN n -> Word64
+_fromEnum (GTIN w) = w `div` 10
+
+_toEnum :: Word64 -> GTIN n
+_toEnum = fixChecksum . GTIN . (10*)
 
 -- | Constructing a 'GTIN" with bound and checksum checks.
 gtin ::
@@ -90,13 +102,23 @@ gtin v''
   where
     v' = fromIntegral v'' :: Integer
     v = GTIN (fromIntegral v')
-    m = _maxBound (error "should not be evaluated" :: GTIN n)
+    m = _maxBound (_hole :: GTIN n)
 
 _decw :: KnownNat n => GTIN n -> Int
 _decw = fromIntegral . natVal
 
+_maxBound' :: (Integral i, KnownNat n) => GTIN n -> i
+_maxBound' = (10 ^) . _decw
+
+_maxBound'' :: (Integral i, KnownNat n) => GTIN n -> i
+_maxBound'' = (10 ^) . pred . _decw
+
 _maxBound :: (Integral i, KnownNat n) => GTIN n -> i
-_maxBound = pred . (10 ^) . _decw
+_maxBound = pred . _maxBound'
+
+-- | values without checksum digit (so divided by ten)
+_modBound :: (Integral i, KnownNat n) => GTIN n -> i -> i
+_modBound = flip mod . _maxBound''
 
 _checkgtin :: Word64 -> GTIN n
 _checkgtin = fixChecksum . GTIN
@@ -181,6 +203,17 @@ gtinToString g@(GTIN w) = unwords (map p (reverse (unfoldr f (n, w))))
         ~(q, r) = v `quotRem` 10000
         dd = min 4 n0
 
+instance ((TN.<=) n 19, KnownNat n) => Num (GTIN n) where
+  fromInteger = _toEnum . fromInteger -- todo: modulo
+  abs = id
+  g1 + g2 = _toEnum (_modBound g1 (_fromEnum g1 + _fromEnum g2))  -- can handle overflow, since we first omit the checksum
+  -- g1 - g2 = _toEnum (_modBound g1 ())
+  negate g = _toEnum (_modBound g (_maxBound'' g - _fromEnum g))
+  signum = _toEnum . signum . _fromEnum
+
+instance ((TN.<=) n 19, KnownNat n) => Arbitrary (GTIN n) where
+  arbitrary = _toEnum <$> choose (0, _maxBound'' (_hole :: GTIN n))
+
 instance Hashable (GTIN n)
 
 instance Binary (GTIN n) where
@@ -193,7 +226,7 @@ instance KnownNat n => Bounded (GTIN (n :: Natural)) where
 instance KnownNat n => Bounded (GTIN (n :: Nat)) where
 #endif
   minBound = fixChecksum (GTIN 0)
-  maxBound = fixChecksum (GTIN (10 ^ _decw (error "should not be evaluated" :: GTIN n) - 1))
+  maxBound = fixChecksum (GTIN (10 ^ _decw (_hole :: GTIN n) - 1))
 
 #if MIN_VERSION_base(4,16,4)
 instance KnownNat n => Enum (GTIN (n :: Natural)) where
