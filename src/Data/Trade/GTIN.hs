@@ -52,6 +52,11 @@ import Data.Data (Data)
 import Data.Hashable (Hashable)
 import Data.List (unfoldr)
 import Data.Typeable (Typeable)
+#if MIN_VERSION_validity(0,9,0)
+import Data.Validity (Validity (validate), check)
+#else
+import Data.Validity (Validation(Validation), Validity (validate), check)
+#endif
 import Data.Word (Word64)
 import GHC.Generics (Generic)
 #if MIN_VERSION_base(4,16,4)
@@ -147,6 +152,11 @@ equivGTIN ::
   -- | 'True' if the given 'GTIN' values are equivalent; 'False' otherwise.
   Bool
 equivGTIN (GTIN w1) (GTIN w2) = w1 == w2
+
+instance KnownNat n => Validity (GTIN n) where
+  validate g@(GTIN w) =
+    check (w <= _maxBound g) "The value is larger than the maximum number of digits."
+      `mappend` check (checkChecksum g) "checksum does not match."
 
 instance KnownNat n => Show (GTIN n) where
   showsPrec d g@(GTIN v) = showParen (d > 0) (("GTIN " ++ printf ("%0" ++ sn ++ "d") v ++ " :: GTIN " ++ sn) ++)
