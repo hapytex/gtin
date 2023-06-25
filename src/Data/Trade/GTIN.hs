@@ -87,7 +87,7 @@ _fromEnum :: GTIN n -> Word64
 _fromEnum (GTIN w) = w `div` 10
 
 _toEnum :: Word64 -> GTIN n
-_toEnum = fixChecksum . GTIN . (10*)
+_toEnum = fixChecksum . GTIN . (10 *)
 
 -- | Constructing a 'GTIN" with bound and checksum checks.
 gtin ::
@@ -205,15 +205,17 @@ gtinToString g@(GTIN w) = unwords (map p (reverse (unfoldr f (n, w))))
         dd = min 4 n0
 
 instance ((TN.<=) n 19, KnownNat n) => Num (GTIN n) where
-  g1 + g2 = _toEnum (_modBound g1 (_fromEnum g1 + _fromEnum g2))  -- can handle overflow, since we first omit the checksum
-  g1 - g2 = _toEnum (_modBound g1 (_maxBound'' g1 +  _fromEnum g1 - _fromEnum g2))
+  g1 + g2 = _toEnum (_modBound g1 (_fromEnum g1 + _fromEnum g2)) -- can handle overflow, since we first omit the checksum
+  g1 - g2 = _toEnum (_modBound g1 (_maxBound'' g1 + _fromEnum g1 - _fromEnum g2))
   g1 * g2 = _toEnum (fromInteger (_modBound g1 (fe g1 * fe g2)))
-    where fe = fromIntegral . _fromEnum
+    where
+      fe = fromIntegral . _fromEnum
   negate g = _toEnum (_modBound g (_maxBound'' g - _fromEnum g))
   abs = id
   signum = _toEnum . signum . _fromEnum
   fromInteger w = v
-    where v = _toEnum (fromInteger (_modBound v w))
+    where
+      v = _toEnum (fromInteger (_modBound v w))
 
 instance ((TN.<=) n 19, KnownNat n) => Real (GTIN n) where
   toRational = toRational . _fromEnum
@@ -221,14 +223,15 @@ instance ((TN.<=) n 19, KnownNat n) => Real (GTIN n) where
 instance ((TN.<=) n 19, KnownNat n) => Integral (GTIN n) where
   toInteger = toInteger . _fromEnum
   g1 `quotRem` g2 = (_toEnum q, _toEnum r)
-    where ~(q, r) = _fromEnum g1 `quotRem` _fromEnum g2
+    where
+      ~(q, r) = _fromEnum g1 `quotRem` _fromEnum g2
   g1 `divMod` g2 = (_toEnum d, _toEnum m)
-    where ~(d, m) = _fromEnum g1 `divMod` _fromEnum g2
+    where
+      ~(d, m) = _fromEnum g1 `divMod` _fromEnum g2
   g1 `quot` g2 = _toEnum (_fromEnum g1 `quot` _fromEnum g2)
   g1 `rem` g2 = _toEnum (_fromEnum g1 `rem` _fromEnum g2)
   g1 `div` g2 = _toEnum (_fromEnum g1 `div` _fromEnum g2)
   g1 `mod` g2 = _toEnum (_fromEnum g1 `mod` _fromEnum g2)
-
 
 instance ((TN.<=) n 19, KnownNat n) => Arbitrary (GTIN n) where
   arbitrary = _toEnum <$> choose (0, _maxBound'' (_hole :: GTIN n))
