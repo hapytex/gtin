@@ -38,6 +38,7 @@ module Data.Trade.GTIN
 
     -- * Check if two GTINs are equivalent, even if the "width" of the GTINs are equivalent.
     equivGTIN,
+    upscaleGTIN,
 
     -- * Fix the checksum of a GTIN number
     fixChecksum,
@@ -162,8 +163,8 @@ checkChecksum (GTIN w') = _determineChecksum w0 == w1
   where
     ~(w0, w1) = w' `quotRem` 10
 
--- upscaleGTIN :: m TN.<= n => GTIN m -> GTIN n
--- upscaleGTIN (GTIN w) = GTIN w
+upscaleGTIN :: (TN.<=) m n => GTIN m -> GTIN n
+upscaleGTIN (GTIN w) = GTIN w
 
 -- | Check if two 'GTIN' numbers, possibly with a different "width" are equivalent.
 equivGTIN ::
