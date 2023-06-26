@@ -46,6 +46,9 @@ module Data.Trade.GTIN
 
     -- * Convert the GTINs to a readable format.
     gtinToString,
+
+    -- * ISBN-10 to ISBN-13
+    fromISBN10,
   )
 where
 
@@ -163,7 +166,13 @@ checkChecksum (GTIN w') = _determineChecksum w0 == w1
   where
     ~(w0, w1) = w' `quotRem` 10
 
-upscaleGTIN :: (TN.<=) m n => GTIN m -> GTIN n
+-- | Convert one 'GTIN' into a 'GTIN' that has more digits. The new 'GTIN' will have additional leading zeros.
+upscaleGTIN ::
+  (TN.<=) m n =>
+  -- | The original 'GTIN' number to upscale.
+  GTIN m ->
+  -- | A 'GTIN' with the same number, but more (or the same) number of digits.
+  GTIN n
 upscaleGTIN (GTIN w) = GTIN w
 
 -- | Check if two 'GTIN' numbers, possibly with a different "width" are equivalent.
@@ -304,3 +313,13 @@ type ISBN13 = GTIN13
 
 -- | A type alias for a 'GTIN' number with eight numbers, with as range @0000 0000@–@9999 9995@.
 type EANUCC8 = GTIN8
+
+-- | Convert a given integral number that contains an ISBN-10 number into the 'ISBN13' equivalent. For example @8175257660@ is converted to @9 7881 7525 7665@. This will add a @978@ prefix,
+-- and recalculate the checksum.
+fromISBN10 ::
+  Integral i =>
+  -- | An 'Integral' number that contains an ISBN-10.
+  i ->
+  -- | The equivalent ISBN-13 number, which is a 'GTIN' number with the corresponding checksum algorithm.
+  ISBN13
+fromISBN10 = fixChecksum . GTIN . (9780000000000 +) . fromIntegral

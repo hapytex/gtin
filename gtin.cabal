@@ -23,6 +23,7 @@ library
     , binary >= 0.2
     , ghc-prim >= 0.5
     , hashable >= 1.0
+    , parsec >=3.0
     , QuickCheck >=2.1
     , validity >= 0.4.0.0
   default-language:    Haskell2010
