@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances, FlexibleContexts #-}
 #if !MIN_VERSION_base(4,17,1)
 {-# LANGUAGE TypeFamilies #-}
 #endif
@@ -49,16 +49,22 @@ module Data.Trade.GTIN
 
     -- * ISBN-10 to ISBN-13
     fromISBN10,
+
+    -- * Parsing GTINs
+    gtinParser, gtinParser_, gtinParser', gtinParser_',
+    parseGTIN, parseGTIN_, parseGTIN', parseGTIN_',
   )
 where
 
 import Data.Binary (Binary (get, put))
+import Data.Char(digitToInt)
 import Data.Data (Data)
+import Data.Functor.Identity (Identity)
 import Data.Hashable (Hashable)
 import Data.List (unfoldr)
 import Data.Typeable (Typeable)
 #if MIN_VERSION_validity(0,9,0)
-import Data.Validity (Validity (validate), check)
+import Data.Validity (Validity (validate), check, prettyValidate)
 #else
 import Data.Validity (Validation(Validation), Validity (validate), check)
 #endif
@@ -73,6 +79,10 @@ import GHC.TypeNats (KnownNat, natVal)
 import qualified GHC.TypeNats as TN
 import Test.QuickCheck.Arbitrary (Arbitrary (arbitrary))
 import Test.QuickCheck.Gen (choose)
+import Text.Parsec (ParseError)
+import Text.Parsec.Char (digit, space)
+import Text.Parsec.Combinator (eof)
+import Text.Parsec.Prim (ParsecT, Stream, runParser, skipMany)
 import Text.Printf (printf)
 
 #if MIN_VERSION_base(4,16,4)
@@ -111,11 +121,14 @@ gtin v''
 _decw :: KnownNat n => GTIN n -> Int
 _decw = fromIntegral . natVal
 
+_decw' :: KnownNat n => GTIN n -> Int
+_decw' = pred . _decw
+
 _maxBound' :: (Integral i, KnownNat n) => GTIN n -> i
 _maxBound' = (10 ^) . _decw
 
 _maxBound'' :: (Integral i, KnownNat n) => GTIN n -> i
-_maxBound'' = (10 ^) . pred . _decw
+_maxBound'' = (10 ^) . _decw'
 
 _maxBound :: (Integral i, KnownNat n) => GTIN n -> i
 _maxBound = pred . _maxBound'
@@ -323,3 +336,41 @@ fromISBN10 ::
   -- | The equivalent ISBN-13 number, which is a 'GTIN' number with the corresponding checksum algorithm.
   ISBN13
 fromISBN10 = fixChecksum . GTIN . (9780000000000 +) . fromIntegral
+
+#if !MIN_VERSION_validity(0,9,0)
+prettyValidate :: Validity a => a -> Either String a
+prettyValidate a = go (validate a)
+  where go (Validation []) = Right a
+        go v = Left (show v)
+#endif
+
+_liftEither :: Show s => MonadFail m => Either s a -> m a
+_liftEither = either (fail . show) pure
+
+gtinParser_' :: forall s u m n . ((TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
+  where
+    go 0 v = pure v
+    go n v = (skipMany space *> dd) >>= go (n - 1) . ((10 * v) +) . fromIntegral
+    dd = fromIntegral . digitToInt <$> digit
+
+gtinParser_ :: forall s u m n . ((TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser_ = gtinParser_' >>= _liftEither . prettyValidate
+
+gtinParser' :: forall s u m n . ((TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser' = gtinParser_' <* eof
+
+gtinParser :: forall s u m n . ((TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser = gtinParser_ <* eof
+
+parseGTIN_' :: forall s n . ((TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN_' = runParser gtinParser_' () ""
+
+parseGTIN' :: forall s n . ((TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN' = runParser gtinParser' () ""
+
+parseGTIN_ :: forall s n . ((TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN_ = runParser gtinParser_ () ""
+
+parseGTIN :: forall s n . ((TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN = runParser gtinParser () ""
