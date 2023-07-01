@@ -409,7 +409,7 @@ _toPattern (GTIN w) = ConP 'GTIN [] [LitP (IntegerL (fromIntegral w))]
 _toPattern (GTIN w) = ConP 'GTIN [LitP (IntegerL (fromIntegral w))]
 #endif
 
-_liftEither :: Show s => MonadFail m => Either s a -> m a
+_liftEither :: (Show s, MonadFail m) => Either s a -> m a
 _liftEither = either (fail . show) pure
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required),
@@ -418,7 +418,7 @@ gtinParser_' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s
 gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
   where
     go 0 v = pure v
-    go n v = (skipMany space *> dd) >>= go (n - 1) . ((10 * v) +) . fromIntegral
+    go n v = (skipMany space *> dd) >>= go (n - 1) . ((10 * v) +)
     dd = fromIntegral . digitToInt <$> digit
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required).
