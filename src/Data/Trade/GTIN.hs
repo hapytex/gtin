@@ -338,7 +338,7 @@ instance KnownNat n => Enum (GTIN (n :: Nat)) where
   enumFromTo (GTIN m) (GTIN n) = map (fixChecksum . GTIN) [m, m + 10 .. n]
 
 instance Lift (GTIN n) where
-  lift (GTIN w) = pure (ConE 'GTIN `AppE` (LitE (IntegerL (fromIntegral w))))
+  lift (GTIN w) = pure (ConE 'GTIN `AppE` LitE (IntegerL (fromIntegral w)))
 
 #if MIN_VERSION_template_haskell(2, 17, 0)
   liftTyped (GTIN w) = Code (pure (TExp (ConE 'GTIN `AppE` (LitE (IntegerL (fromIntegral w))))))
@@ -404,9 +404,9 @@ prettyValidate a = go (validate a)
 
 _toPattern :: GTIN n -> Pat
 #if MIN_VERSION_template_haskell(2, 18, 0)
-_toPattern (GTIN w) = ConP 'GTIN [] [(LitP (IntegerL (fromIntegral w)))]
+_toPattern (GTIN w) = ConP 'GTIN [] [LitP (IntegerL (fromIntegral w))]
 #else
-_toPattern (GTIN w) = ConP 'GTIN [(LitP (IntegerL (fromIntegral w)))]
+_toPattern (GTIN w) = ConP 'GTIN [LitP (IntegerL (fromIntegral w))]
 #endif
 
 _liftEither :: Show s => MonadFail m => Either s a -> m a
