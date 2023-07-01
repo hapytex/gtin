@@ -6,7 +6,7 @@ import Data.Binary(decode, encode)
 import Data.Proxy(Proxy(Proxy))
 import Data.Validity(isValid)
 
-import Data.Trade.GTIN(GTIN, gtin13Q)
+import Data.Trade.GTIN(GTIN, GTIN8, GTIN13, gtin8Q, gtin13Q)
 
 import qualified GHC.TypeNats as TN
 import GHC.TypeNats (KnownNat)
@@ -38,7 +38,7 @@ distributivityOfMultiplyWrtPlus x y z = x * (y + z) == x * y + x * z && (y + z) 
 coherenceFromInteger :: forall n . ((TN.<=) n 19, KnownNat n) => GTIN n -> Bool
 coherenceFromInteger x = fromInteger (toInteger x) == x
 
-identityEncodingDecoding :: forall (n :: TN.Natural) . GTIN n -> Bool
+identityEncodingDecoding :: forall n . GTIN n -> Bool
 identityEncodingDecoding x = decode (encode x) == x
 
 {-
@@ -111,4 +111,6 @@ spec = do
   describe "GTIN18" (checks @18 Proxy)
   describe "GTIN19" (checks @19 Proxy)
 
-example = [gtin13Q|1234567890128|]
+example :: GTIN8 -> GTIN13
+example [gtin8Q|12345670|] = [gtin13Q|1234567890128|]
+example _ = [gtin13Q|0000000000000|]
