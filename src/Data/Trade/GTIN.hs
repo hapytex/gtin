@@ -82,6 +82,9 @@ module Data.Trade.GTIN
 where
 
 import Control.Monad ((>=>))
+#if !MIN_VERSION_base(4,13,0)
+import Control.Monad.Fail(MonadFail)
+#endif
 import Data.Binary (Binary (get, put))
 import Data.Char (chr, digitToInt)
 import Data.Data (Data)
