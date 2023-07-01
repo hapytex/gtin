@@ -318,11 +318,13 @@ instance Binary (GTIN n) where
 
 #if MIN_VERSION_base(4,16,4)
 instance KnownNat n => Bounded (GTIN (n :: Natural)) where
-#else
-instance KnownNat n => Bounded (GTIN (n :: Nat)) where
-#endif
   minBound = fixChecksum (GTIN 0)
   maxBound = fixChecksum (GTIN (10 ^ _decw (_hole :: GTIN n) - 1))
+#else
+instance KnownNat n => Bounded (GTIN (n :: Nat)) where
+  minBound = fixChecksum (GTIN 0)
+  maxBound = fixChecksum (GTIN (10 ^ _decw (_hole :: GTIN n) - 1))
+#endif
 
 #if MIN_VERSION_base(4,16,4)
 instance KnownNat n => Enum (GTIN (n :: Natural)) where
@@ -415,10 +417,11 @@ prettyValidate a = go (validate a)
         go v = Left (show v)
 #endif
 
-_toPattern :: GTIN n -> Pat
 #if MIN_VERSION_template_haskell(2, 18, 0)
+_toPattern :: GTIN n -> Pat
 _toPattern (GTIN w) = ConP 'GTIN [] [LitP (IntegerL (fromIntegral w))]
 #else
+_toPattern :: GTIN n -> Pat
 _toPattern (GTIN w) = ConP 'GTIN [LitP (IntegerL (fromIntegral w))]
 #endif
 
