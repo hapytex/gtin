@@ -326,9 +326,6 @@ instance KnownNat n => Bounded (GTIN (n :: Nat)) where
 
 #if MIN_VERSION_base(4,16,4)
 instance KnownNat n => Enum (GTIN (n :: Natural)) where
-#else
-instance KnownNat n => Enum (GTIN (n :: Nat)) where
-#endif
   succ (GTIN w) = fixChecksum (GTIN (w + 10))
   pred (GTIN w) = fixChecksum (GTIN (w - 10))
   toEnum = GTIN . toEnum
@@ -339,6 +336,19 @@ instance KnownNat n => Enum (GTIN (n :: Nat)) where
     | otherwise = _checkgtin' [_wipe m, _wipe n .. 0]
   enumFromThenTo (GTIN m) (GTIN n) (GTIN o) = _checkgtin' [_wipe m, _wipe n .. _wipe o]
   enumFromTo (GTIN m) (GTIN n) = map (fixChecksum . GTIN) [m, m + 10 .. n]
+#else
+instance KnownNat n => Enum (GTIN (n :: Nat)) where
+  succ (GTIN w) = fixChecksum (GTIN (w + 10))
+  pred (GTIN w) = fixChecksum (GTIN (w - 10))
+  toEnum = GTIN . toEnum
+  fromEnum (GTIN w) = fromEnum w
+  enumFrom g@(GTIN n) = _checkgtin' [n, n + 10 .. _maxBound g]
+  enumFromThen g@(GTIN m) (GTIN n)
+    | m <= n = _checkgtin' [_wipe m, _wipe n .. _maxBound g]
+    | otherwise = _checkgtin' [_wipe m, _wipe n .. 0]
+  enumFromThenTo (GTIN m) (GTIN n) (GTIN o) = _checkgtin' [_wipe m, _wipe n .. _wipe o]
+  enumFromTo (GTIN m) (GTIN n) = map (fixChecksum . GTIN) [m, m + 10 .. n]
+#endif
 
 instance Lift (GTIN n) where
   lift (GTIN w) = pure (ConE 'GTIN `AppE` LitE (IntegerL (fromIntegral w)))
