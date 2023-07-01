@@ -444,7 +444,11 @@ parseGTIN_ = runParser gtinParser_ () ""
 parseGTIN :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
 parseGTIN = runParser gtinParser () ""
 
+#if MIN_VERSION_base(4,16,4)
 gtinQ :: forall (n :: Natural). ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
+#else
+gtinQ :: forall (n :: Nat). ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
+#endif
 gtinQ _ =
   QuasiQuoter
     { quoteExp = (_liftEither >=> lift) . parseGTIN @n,
