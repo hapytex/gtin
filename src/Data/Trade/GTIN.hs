@@ -418,6 +418,7 @@ _liftEither = either (fail . show) pure
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required),
 -- and furthermore does /not/ validate if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
 gtinParser_' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+  -- | A parser parsing a GTIN with an arbitrary number of digits that does /not/ force the stream to end, and does /not/ check the checksum.
 gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
   where
     go 0 v = pure v
@@ -426,13 +427,23 @@ gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required).
 -- The GTIN is validated, so if the checksum does not match, the parser fails. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser_ :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser_ :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
+  -- | A parser parsing a GTIN with an arbitrary number of digits that does /not/ force the stream to end, but checks the checksum.
+  ParsecT s u m (GTIN n)
 gtinParser_ = gtinParser_' >>= _liftEither . prettyValidate
 
-gtinParser' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+-- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser forces the stream to /end/ after the gtin,
+-- but does /not/ validate if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
+gtinParser' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
+  -- | A parser parsing a GTIN with an arbitrary number of digits thats force the stream to end, but does /not/ check the checksum.
+  ParsecT s u m (GTIN n)
 gtinParser' = gtinParser_' <* eof
 
-gtinParser :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+-- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser forces the stream to /end/ after the gtin,
+-- and validates if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
+gtinParser :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
+  -- | A parser parsing a GTIN with an arbitrary number of digits that forces the stream to end, and does checks the checksum.
+  ParsecT s u m (GTIN n)
 gtinParser = gtinParser_ <* eof
 
 parseGTIN_' :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
