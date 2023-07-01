@@ -377,6 +377,13 @@ prettyValidate a = go (validate a)
         go v = Left (show v)
 #endif
 
+_toPattern :: GTIN n -> Pat
+#if MIN_VERSION_template_haskell(2, 18, 0)
+_toPattern (GTIN w) = ConP 'GTIN [] [(LitP (IntegerL (fromIntegral w)))]
+#else
+_toPattern (GTIN w) = ConP 'GTIN [(LitP (IntegerL (fromIntegral w)))]
+#endif
+
 _liftEither :: Show s => MonadFail m => Either s a -> m a
 _liftEither = either (fail . show) pure
 
@@ -415,7 +422,7 @@ parseGTIN = runParser gtinParser () ""
 gtinQ :: forall (n :: Natural) . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
 gtinQ _ =  QuasiQuoter
     { quoteExp = (_liftEither >=> lift) . parseGTIN @n,
-      quotePat =  const (fail "can not produce a pattern with this QuasiQuoter"),
+      quotePat =  (_liftEither >=> pure . _toPattern) . parseGTIN @n,
       quoteType = const (fail "can not produce a type with this QuasiQuoter"),
       quoteDec = const (fail "can not produce a declaration with this QuasiQuoter")
     }
