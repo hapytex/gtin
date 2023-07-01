@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, ExplicitForAll, TypeApplications, DataKinds, ScopedTypeVariables, KindSignatures #-}
+{-# LANGUAGE QuasiQuotes, ExplicitForAll, TypeApplications, DataKinds, ScopedTypeVariables, KindSignatures, TypeFamilies #-}
 
 module Data.Trade.GTINSpec where
 
