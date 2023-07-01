@@ -417,8 +417,11 @@ _liftEither = either (fail . show) pure
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required),
 -- and furthermore does /not/ validate if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser_' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser_' ::
+  forall s u m n.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
   -- | A parser parsing a GTIN with an arbitrary number of digits that does /not/ force the stream to end, and does /not/ check the checksum.
+  ParsecT s u m (GTIN n)
 gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
   where
     go 0 v = pure v
@@ -427,42 +430,79 @@ gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required).
 -- The GTIN is validated, so if the checksum does not match, the parser fails. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser_ :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
+gtinParser_ ::
+  forall s u m n.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
   -- | A parser parsing a GTIN with an arbitrary number of digits that does /not/ force the stream to end, but checks the checksum.
   ParsecT s u m (GTIN n)
 gtinParser_ = gtinParser_' >>= _liftEither . prettyValidate
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser forces the stream to /end/ after the gtin,
 -- but does /not/ validate if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
+gtinParser' ::
+  forall s u m n.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
   -- | A parser parsing a GTIN with an arbitrary number of digits thats force the stream to end, but does /not/ check the checksum.
   ParsecT s u m (GTIN n)
 gtinParser' = gtinParser_' <* eof
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser forces the stream to /end/ after the gtin,
 -- and validates if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
+gtinParser ::
+  forall s u m n.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) =>
   -- | A parser parsing a GTIN with an arbitrary number of digits that forces the stream to end, and does checks the checksum.
   ParsecT s u m (GTIN n)
 gtinParser = gtinParser_ <* eof
 
-parseGTIN_' :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+-- | Run the 'gtinParser_'' parser and thus parses a 'GTIN' with an arbitrary number of digits. The parser does not require the stream to end after the 'GTIN', and does /not/ validate the checksum.
+parseGTIN_' ::
+  forall n s.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) =>
+  -- | The stream to parse.
+  s ->
+  -- | The result of the parser: 'Either' a 'ParseError' or the parsed 'GTIN'.
+  Either ParseError (GTIN n)
 parseGTIN_' = runParser gtinParser_' () ""
 
-parseGTIN' :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+-- | Run the 'gtinParser_'' parser and thus parses a 'GTIN' with an arbitrary number of digits. The parser requires the stream to end after the 'GTIN', but does /not/ validate the checksum.
+parseGTIN' ::
+  forall n s.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) =>
+  -- | The stream to parse.
+  s ->
+  -- | The result of the parser: 'Either' a 'ParseError' or the parsed 'GTIN'.
+  Either ParseError (GTIN n)
 parseGTIN' = runParser gtinParser' () ""
 
-parseGTIN_ :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+-- | Run the 'gtinParser_'' parser and thus parses a 'GTIN' with an arbitrary number of digits. The parser does not require the stream to end after the 'GTIN', but validates the checksum.
+parseGTIN_ ::
+  forall n s.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) =>
+  -- | The stream to parse.
+  s ->
+  -- | The result of the parser: 'Either' a 'ParseError' or the parsed 'GTIN'.
+  Either ParseError (GTIN n)
 parseGTIN_ = runParser gtinParser_ () ""
 
-parseGTIN :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+-- | Run the 'gtinParser_'' parser and thus parses a 'GTIN' with an arbitrary number of digits. The parser requires the stream to end after the 'GTIN', and validates the checksum.
+parseGTIN ::
+  forall n s.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) =>
+  -- | The stream to parse.
+  s ->
+  -- | The result of the parser: 'Either' a 'ParseError' or the parsed 'GTIN'.
+  Either ParseError (GTIN n)
 parseGTIN = runParser gtinParser () ""
 
-#if MIN_VERSION_base(4,16,4)
-gtinQ :: forall (n :: Natural). ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
-#else
-gtinQ :: forall (n :: Nat). ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
-#endif
+-- | A function that constructs a 'GTIN' expression or pattern based on a given string. The 'Proxy' parameter is used to specify the number of digits of the 'GTIN' number.
+gtinQ ::
+  forall n.
+  ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) =>
+  -- | The 'Proxy' object that is ignored, but used to determine the number of digits of the 'GTIN' number.
+  Proxy (GTIN n) ->
+  -- | The corresponding 'QuasiQuoter' that resolves to a 'GTIN' expression or pattern.
+  QuasiQuoter
 gtinQ _ =
   QuasiQuoter
     { quoteExp = (_liftEither >=> lift) . parseGTIN @n,
@@ -471,41 +511,80 @@ gtinQ _ =
       quoteDec = const (fail "can not produce a declaration with this QuasiQuoter")
     }
 
-ssccQ :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'SSCC' number.
+ssccQ ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 ssccQ = gtinQ @18 Proxy
 
-gsinQ :: QuasiQuoter
+-- | A 'QuasiQuoter' for a 'GSIN' number.
+gsinQ ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 gsinQ = gtinQ @17 Proxy
 
-gtin14Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'GTIN14' number.
+gtin14Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 gtin14Q = gtinQ @14 Proxy
 
-eanucc14Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'EANUCC14' number.
+eanucc14Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 eanucc14Q = gtin14Q
 
-scc14Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'SCC14' number.
+scc14Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 scc14Q = gtin14Q
 
-gtin13Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'GTIN13' number.
+gtin13Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 gtin13Q = gtinQ @13 Proxy
 
-eanQ :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'EAN' number.
+eanQ ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 eanQ = gtin13Q
 
-eanucc13Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'EANUCC13' number.
+eanucc13Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 eanucc13Q = gtin13Q
 
-gtin12Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'GTIN12' number.
+gtin12Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 gtin12Q = gtinQ @12 Proxy
 
-gtin8Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'GTIN8' number.
+gtin8Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 gtin8Q = gtinQ @8 Proxy
 
-eanucc8Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'EANUCC8' number.
+eanucc8Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 eanucc8Q = gtin8Q
 
-isbn13Q :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'ISBN13' number.
+isbn13Q ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 isbn13Q = gtinQ @13 Proxy
 
-isbnQ :: QuasiQuoter
+-- | A 'QuasiQuoter' for an 'ISBN' number, only the thirteen digit number is supported.
+isbnQ ::
+  -- | The corresponding 'QuasiQuoter'.
+  QuasiQuoter
 isbnQ = isbn13Q
