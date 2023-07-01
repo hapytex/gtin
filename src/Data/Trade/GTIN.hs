@@ -2,9 +2,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances, FlexibleContexts, TypeApplications, TemplateHaskellQuotes #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE UndecidableInstances #-}
 #if !MIN_VERSION_base(4,17,1)
 {-# LANGUAGE TypeFamilies #-}
 #endif
@@ -51,22 +54,41 @@ module Data.Trade.GTIN
     fromISBN10',
 
     -- * Parsing GTINs
-    gtinParser, gtinParser_, gtinParser', gtinParser_',
-    parseGTIN, parseGTIN_, parseGTIN', parseGTIN_',
+    gtinParser,
+    gtinParser_,
+    gtinParser',
+    gtinParser_',
+    parseGTIN,
+    parseGTIN_,
+    parseGTIN',
+    parseGTIN_',
 
     -- * QuasiQuoters
-    gtinQ, gtin14Q, gtin13Q, gtin12Q, gtin8Q, eanucc8Q, eanucc14Q, scc14Q, eanQ, eanucc13Q, gsinQ, ssccQ, isbnQ, isbn13Q
+    gtinQ,
+    gtin14Q,
+    gtin13Q,
+    gtin12Q,
+    gtin8Q,
+    eanucc8Q,
+    eanucc14Q,
+    scc14Q,
+    eanQ,
+    eanucc13Q,
+    gsinQ,
+    ssccQ,
+    isbnQ,
+    isbn13Q,
   )
 where
 
 import Control.Monad ((>=>))
 import Data.Binary (Binary (get, put))
-import Data.Char(chr, digitToInt)
+import Data.Char (chr, digitToInt)
 import Data.Data (Data)
 import Data.Functor.Identity (Identity)
 import Data.Hashable (Hashable)
 import Data.List (unfoldr)
-import Data.Proxy(Proxy(Proxy))
+import Data.Proxy (Proxy (Proxy))
 import Data.Typeable (Typeable)
 #if MIN_VERSION_validity(0,9,0)
 import Data.Validity (Validity (validate), check, prettyValidate)
@@ -75,7 +97,6 @@ import Data.Validity (Validation(Validation), Validity (validate), check)
 #endif
 import Data.Word (Word64)
 import GHC.Generics (Generic)
-import Language.Haskell.TH.Quote (QuasiQuoter (QuasiQuoter, quoteDec, quoteExp, quotePat, quoteType))
 #if MIN_VERSION_base(4,16,4)
 import Numeric.Natural (Natural)
 #else
@@ -83,6 +104,7 @@ import GHC.Types(Nat)
 #endif
 import GHC.TypeNats (KnownNat, natVal)
 import qualified GHC.TypeNats as TN
+import Language.Haskell.TH.Quote (QuasiQuoter (QuasiQuoter, quoteDec, quoteExp, quotePat, quoteType))
 import Test.QuickCheck.Arbitrary (Arbitrary (arbitrary))
 import Test.QuickCheck.Gen (choose)
 import Text.Parsec (ParseError)
@@ -90,6 +112,7 @@ import Text.Parsec.Char (digit, space)
 import Text.Parsec.Combinator (eof)
 import Text.Parsec.Prim (ParsecT, Stream, runParser, skipMany)
 import Text.Printf (PrintfArg, printf)
+
 #if MIN_VERSION_template_haskell(2, 17, 0)
 import Language.Haskell.TH.Syntax (Code (Code), Exp (AppE, ConE, LitE), Lift (lift, liftTyped), Lit (IntegerL), Pat (ConP, LitP), TExp (TExp))
 #elif MIN_VERSION_template_haskell(2, 16, 0)
@@ -215,10 +238,11 @@ instance KnownNat n => Validity (GTIN n) where
   validate g@(GTIN w) =
     check (w <= _maxBound g) "The value is larger than the maximum number of digits."
       `mappend` check (checkChecksum g) ("checksum does not match: expected " ++ pf ++ cc c' : ", but got " ++ pf ++ cc w0 : ".")
-        where ~(w', w0) = w `divMod` 10
-              c' = _determineChecksum w'
-              pf = _printf (_decw' g) w'
-              cc = chr . (0x1d7ce +) . fromIntegral
+    where
+      ~(w', w0) = w `divMod` 10
+      c' = _determineChecksum w'
+      pf = _printf (_decw' g) w'
+      cc = chr . (0x1d7ce +) . fromIntegral
 
 _printf :: (Integral i, Show i, PrintfArg j) => i -> j -> String
 _printf = printf . ("%0" ++) . (++ "d") . show
@@ -315,6 +339,7 @@ instance KnownNat n => Enum (GTIN (n :: Nat)) where
 
 instance Lift (GTIN n) where
   lift (GTIN w) = pure (ConE 'GTIN `AppE` (LitE (IntegerL (fromIntegral w))))
+
 #if MIN_VERSION_template_haskell(2, 17, 0)
   liftTyped (GTIN w) = Code (pure (TExp (ConE 'GTIN `AppE` (LitE (IntegerL (fromIntegral w))))))
 #elif MIN_VERSION_template_haskell(2, 16, 0)
@@ -389,7 +414,7 @@ _liftEither = either (fail . show) pure
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required),
 -- and furthermore does /not/ validate if the gtin is indeed valid. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser_' :: forall s u m n . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser_' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
 gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
   where
     go 0 v = pure v
@@ -398,31 +423,32 @@ gtinParser_' = GTIN <$> (dd >>= go (_decw' (_hole :: GTIN n)))
 
 -- | A parser for a gtin number with an arbitrary number of digits between two and nineteen. the parser does not /end/ after the gtin (so no 'eof' is required).
 -- The GTIN is validated, so if the checksum does not match, the parser fails. The parser parses the number of digits with an arbitrary number of spaces between any two digits.
-gtinParser_ :: forall s u m n . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser_ :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
 gtinParser_ = gtinParser_' >>= _liftEither . prettyValidate
 
-gtinParser' :: forall s u m n . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser' :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
 gtinParser' = gtinParser_' <* eof
 
-gtinParser :: forall s u m n . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
+gtinParser :: forall s u m n. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s m Char) => ParsecT s u m (GTIN n)
 gtinParser = gtinParser_ <* eof
 
-parseGTIN_' :: forall n s . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN_' :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
 parseGTIN_' = runParser gtinParser_' () ""
 
-parseGTIN' :: forall n s . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN' :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
 parseGTIN' = runParser gtinParser' () ""
 
-parseGTIN_ :: forall n s . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN_ :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
 parseGTIN_ = runParser gtinParser_ () ""
 
-parseGTIN :: forall n s . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
+parseGTIN :: forall n s. ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n, Stream s Identity Char) => s -> Either ParseError (GTIN n)
 parseGTIN = runParser gtinParser () ""
 
-gtinQ :: forall (n :: Natural) . ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
-gtinQ _ =  QuasiQuoter
+gtinQ :: forall (n :: Natural). ((TN.<=) 2 n, (TN.<=) n 19, KnownNat n) => Proxy (GTIN n) -> QuasiQuoter
+gtinQ _ =
+  QuasiQuoter
     { quoteExp = (_liftEither >=> lift) . parseGTIN @n,
-      quotePat =  (_liftEither >=> pure . _toPattern) . parseGTIN @n,
+      quotePat = (_liftEither >=> pure . _toPattern) . parseGTIN @n,
       quoteType = const (fail "can not produce a type with this QuasiQuoter"),
       quoteDec = const (fail "can not produce a declaration with this QuasiQuoter")
     }
