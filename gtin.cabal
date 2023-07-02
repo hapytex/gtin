@@ -23,6 +23,10 @@ library
     , binary >= 0.2
     , ghc-prim >= 0.5
     , hashable >= 1.0
+    , parsec >=3.0
+    , QuickCheck >=2.1
+    , template-haskell >=2.3.0.0
+    , validity >= 0.4.0.0
   default-language:    Haskell2010
   ghc-options:         -Wall
                        -Wcompat
@@ -31,6 +35,30 @@ library
                        -Wincomplete-uni-patterns
                        -Wmissing-home-modules
                        -Wredundant-constraints
+
+test-suite             gtin-test
+  type:                exitcode-stdio-1.0
+  main-is:             Main.hs
+  hs-source-dirs:      test
+  other-modules:
+      Data.Trade.GTINSpec
+  build-depends:
+      base
+    , gtin
+    , binary >= 0.2
+    , hspec ==2.*
+    , parsec >=3.0
+    , QuickCheck >=2.1
+    , validity >= 0.4.0.0
+  build-tool-depends:
+      hspec-discover:hspec-discover == 2.*
+  default-language:    Haskell2010
+  default-extensions:
+  ghc-options:       -Wall -Wcompat -Wcompat
+                     -Wincomplete-record-updates
+                     -Wincomplete-uni-patterns
+                     -Wredundant-constraints
+
 
 source-repository head
   type:     git
